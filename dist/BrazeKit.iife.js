@@ -601,6 +601,12 @@ var mpBrazeKit = (function (exports) {
 	    }
 
 	    function primeAppBoyWebPush() {
+
+			let inAppMessageService = {
+				displayMessage: undefined
+			};
+			window.addService('inAppMessageService', inAppMessageService)
+
 	        // The following code block is Braze's best practice for implementing
 	        // their push primer.  It should not be changed unless Braze updates it
 	        // https://www.braze.com/docs/developer_guide/platform_integration_guides/web/push_notifications/integration/#soft-push-prompts
@@ -635,7 +641,47 @@ var mpBrazeKit = (function (exports) {
 
 	            // Display the message
 	            if (shouldDisplay) {
-	                appboy.display.showInAppMessage(inAppMessage);
+	               // All color numbers are in a decimal representaion of a hexa number in the form AARRGGBB, so we convert to #RRGGBBAA
+					const toHexaString = num => {
+						if (num === undefined) return num;
+						if (Number.isInteger(num)){
+							const hex = `${num.toString(16)}`;
+							return `#${hex.slice(2,8)+hex[0]+hex[1]}`;
+						}
+						return num;
+					}
+
+					const getMessageType =  (message)=>{
+						if (message instanceof appboy.ModalMessage) return 'modal'
+						if (message instanceof appboy.FullScreenMessage) return 'fullscreen'
+					}
+					const getButtonConfig = (messageButton)=>{
+						return {
+							text: messageButton.text,
+							backgroundColor: toHexaString(messageButton.backgroundColor),
+							textColor: toHexaString(messageButton.textColor),
+							borderColor: toHexaString(messageButton.borderColor),
+							onClick: (dialog) => {
+								if (messageButton.uri) window.open(messageButton.uri);
+								else dialog.close();
+							}
+						}
+					}
+					const messageConfig = {
+						type: getMessageType(inAppMessage),
+						title: inAppMessage.header,
+						titleColor: toHexaString(inAppMessage.headerTextColor),
+						text: inAppMessage.message,
+						textColor: toHexaString(inAppMessage.textColor),
+						backgroundColor: toHexaString(inAppMessage.backgroundColor),
+						buttons: inAppMessage.buttons.map(button => getButtonConfig(button)),
+						imageUrl: inAppMessage.imageUrl,
+					}
+					console.log('Recieved in-app-message from Braze', inAppMessage)
+					console.log('Mapped into FO-MessageConfig:', messageConfig)
+					// Display message using FO inAppMessageService
+					if (inAppMessageService.displayMessage) inAppMessageService.displayMessage(messageConfig)
+					// appboy.display.showInAppMessage(message);
 	            }
 	        });
 	    }
@@ -657,8 +703,9 @@ var mpBrazeKit = (function (exports) {
 	            options.sessionTimeoutInSeconds =
 	                forwarderSettings.ABKSessionTimeoutKey || 1800;
 	            options.sdkFlavor = 'mparticle';
-	            options.enableHtmlInAppMessages =
-	                forwarderSettings.enableHtmlInAppMessages == 'True';
+	            options.enableHtmlInAppMessages = false
+	                // forwarderSettings.enableHtmlInAppMessages == 'True';
+				options.noCookies = true;
 	            options.doNotLoadFontAwesome =
 	                forwarderSettings.doNotLoadFontAwesome == 'True';
 
