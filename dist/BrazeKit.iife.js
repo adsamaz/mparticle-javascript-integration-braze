@@ -606,6 +606,7 @@ var mpBrazeKit = (function (exports) {
 				displayMessage: undefined
 			};
 			window.addService('inAppMessageService', inAppMessageService)
+			console.debug("In-app-message service added from mpBrazeKit")
 
 	        // The following code block is Braze's best practice for implementing
 	        // their push primer.  It should not be changed unless Braze updates it
@@ -613,6 +614,7 @@ var mpBrazeKit = (function (exports) {
 	        appboy.subscribeToInAppMessage(function(inAppMessage) {
 	            var shouldDisplay = true;
 
+				console.debug('Recieved in-app-message from Braze', inAppMessage)
 	            if (inAppMessage instanceof appboy.InAppMessage) {
 	                // Read the key-value pair for msg-id
 	                var msgId = inAppMessage.extras['msg-id'];
@@ -677,8 +679,8 @@ var mpBrazeKit = (function (exports) {
 						buttons: inAppMessage.buttons.map(button => getButtonConfig(button)),
 						imageUrl: inAppMessage.imageUrl,
 					}
-					console.log('Recieved in-app-message from Braze', inAppMessage)
-					console.log('Mapped into FO-MessageConfig:', messageConfig)
+					
+					console.debug('Mapped into FO-MessageConfig:', messageConfig)
 					// Display message using FO inAppMessageService
 					if (inAppMessageService.displayMessage) inAppMessageService.displayMessage(messageConfig)
 					// appboy.display.showInAppMessage(message);
@@ -703,11 +705,13 @@ var mpBrazeKit = (function (exports) {
 	            options.sessionTimeoutInSeconds =
 	                forwarderSettings.ABKSessionTimeoutKey || 1800;
 	            options.sdkFlavor = 'mparticle';
+
+				// FO manually changed settings
 	            options.enableHtmlInAppMessages = false
 	                // forwarderSettings.enableHtmlInAppMessages == 'True';
 				options.noCookies = true;
-	            options.doNotLoadFontAwesome =
-	                forwarderSettings.doNotLoadFontAwesome == 'True';
+	            options.doNotLoadFontAwesome = true
+	                // forwarderSettings.doNotLoadFontAwesome == 'True';
 
 	            if (forwarderSettings.safariWebsitePushId) {
 	                options.safariWebsitePushId =
@@ -878,7 +882,7 @@ var mpBrazeKit = (function (exports) {
 	            constructor: constructor,
 	        };
 	    }
-	    window.console.log(
+	    window.console.debug(
 	        'Successfully registered ' + name + ' to your mParticle configuration'
 	    );
 	}
